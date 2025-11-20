@@ -97,3 +97,16 @@ You can run a full simulation with MoveIt! and RViz to test motion planning with
     ```
 
 Inside RViz, you can drag the interactive marker at the end of the arm to set a goal and then click "Plan and Execute".
+
+## Changelog (recent)
+
+### 2025-11-21 — Local ROS2 port and simulation additions
+- Renamed message (.msg) files to PascalCase and fixed `package.xml` to be ROS2-compliant.
+- Ported original ROS1 nodes to ROS2: read, write, moveit and rviz nodes (C++).
+- Added a simple Python `sim_publisher.py` that publishes `SwiftproState` for visualization/testing.
+- Created `launch/sim.launch.py` to start the sim publisher, `swiftpro_rviz_node_ros2`, and `robot_state_publisher` + RViz config.
+- Added `rviz/swiftpro_default.rviz` (default RViz view to show robot model and joint_states).
+- Temporarily added a compile-time `include/serial/serial.h` stub to allow building without the external serial library.
+
+Notes:
+- This commit aims to make the package build and run in a ROS2 Humble environment for simulation and visualization. Replace the serial stub with a proper serial library (e.g. wjwwood/serial) before connecting real hardware.
