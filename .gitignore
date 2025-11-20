@@ -1,0 +1,41 @@
+# Common OS
+.DS_Store
+Thumbs.db
+
+# Build and install folders
+/build/
+/install/
+/log/
+
+# colcon/ament
+/build_isolated/
+/devel/
+
+# Python
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+
+# Editor swap
+*.swp
+
+# Misc
+*.egg-info/
+dist/
+
+# ROS specific
+/*.egg-info
+/*.egg
+# ROS build files
+build/
+install/
+log/
+
+# Other common files to ignore
+*.swp
+*~
+.DS_Store
