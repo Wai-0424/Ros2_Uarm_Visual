@@ -12,6 +12,10 @@ class SimPublisher(Node):
     def __init__(self):
         super().__init__('swiftpro_sim_publisher')
         self.pub = self.create_publisher(SwiftproState, 'SwiftproState_topic', 10)
+        # subscribe to commanded states so simulation can mirror control commands
+        self.sub_cmd = self.create_subscription(SwiftproState, 'SwiftproCommand', self.cmd_callback, 10)
+        self._use_command = False
+        self._cmd_state = SwiftproState()
         self.declare_parameter('rate', 2.0)
         self.declare_parameter('x', 200.0)
         self.declare_parameter('y', 0.0)
@@ -20,6 +24,10 @@ class SimPublisher(Node):
         self.get_logger().info('SimPublisher started')
 
     def timer_cb(self):
+        if self._use_command:
+            self.pub.publish(self._cmd_state)
+            return
+
         msg = SwiftproState()
         # motor angles are not used by rviz_node's IK in some configs, but set them anyway
         msg.motor_angle1 = 0.0
@@ -33,6 +41,15 @@ class SimPublisher(Node):
         msg.swiftpro_status = 0
         msg.gripper = 0
         self.pub.publish(msg)
+
+    def cmd_callback(self, msg: SwiftproState):
+        # received commanded state from write node; use it for simulation
+        try:
+            self._cmd_state = msg
+            self._use_command = True
+            self.get_logger().info('Received SwiftproCommand, updating simulated state')
+        except Exception as e:
+            self.get_logger().error(f'Error handling SwiftproCommand: {e}')
 
 
 def main(args=None):

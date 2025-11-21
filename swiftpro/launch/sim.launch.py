@@ -22,7 +22,7 @@ def generate_launch_description():
     # simulation publisher (installed script)
     sim_pub_node = Node(
         package='swiftpro',
-        executable='sim_publisher.py',
+        executable='/media/wai4424/Data/Ros2_Uarm_Visual-main/install/lib/swiftpro/sim_publisher.py',
         name='swiftpro_sim_publisher',
         output='screen',
         emulate_tty=True,
@@ -59,9 +59,19 @@ def generate_launch_description():
         arguments=['-d', PathJoinSubstitution([FindPackageShare('swiftpro'), 'rviz', 'swiftpro_default.rviz'])]
     )
 
+    # Static transform publisher from world to Base
+    static_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'Base']
+    )
+
     ld.add_action(sim_pub_node)
     ld.add_action(rviz_node)
     ld.add_action(rsp_node)
     ld.add_action(rviz2_node)
+    ld.add_action(static_tf_node)
 
     return ld

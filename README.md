@@ -5,49 +5,194 @@
 
 This project provides a complete ROS 2 (Humble) framework for controlling the uFactory Swift Pro robotic arm using the MoveIt! 2 motion planning platform.
 
-## Overview
+## 🚨 當前狀態與問題
 
-This workspace is designed to provide everything needed to get started with the Swift Pro arm in ROS 2, from basic hardware communication to advanced motion planning. It allows for both simulated and real-world control of the robot.
+### 已解決的問題
+- ✅ 添加了碰撞幾何到URDF文件 (`swiftpro/urdf/pro_model.xacro`)
+- ✅ 修改了RViz配置以使用基本RobotModel顯示
+- ✅ 設置了靜態變換發布器從world到Base坐標系
+- ✅ 系統可以啟動但有各種警告
 
-## Workspace Structure
+### 當前問題
+- ❌ **主要問題**: RViz只顯示機器人軸線而不顯示完整的3D模型
+- ❌ **joint_states主題**: 無法確認joint_states主題是否正確發布
+- ❌ **共享庫錯誤**: `libswiftpro__rosidl_typesupport_cpp.so` 無法加載
+- ❌ **模塊導入錯誤**: `ModuleNotFoundError: No module named 'swiftpro'`
+- ❌ **重複節點**: combined.launch.py啟動重複的節點導致衝突
 
-The project is organized into three main ROS 2 packages:
+### 我的推測
+1. **URDF網格路徑問題**: STL文件路徑可能不正確或文件不存在
+2. **MoveIt插件兼容性**: ROS2的MoveIt RViz插件可能與當前版本不兼容
+3. **Launch文件設計問題**: combined.launch.py同時啟動真實機器人和模擬節點導致衝突
+4. **包安裝問題**: colcon build可能沒有正確安裝共享庫或Python模塊
+5. **TF樹問題**: 變換樹可能沒有正確建立
 
--   `swiftpro`: The core hardware driver package. It contains the nodes for communicating with the robot's controller, publishing joint states, and handling custom message types.
--   `pro_moveit_config`: A MoveIt! 2 configuration package for the "Pro" version of the arm. It includes all necessary configuration files for motion planning, kinematics, and visualization.
--   `swift_moveit_config`: A similar MoveIt! 2 configuration package, but tailored for the standard "Swift" version of the arm.
+## 詳細修改記錄
 
-## System Requirements
+### 1. URDF碰撞幾何添加 (2025-11-22)
+**文件**: `swiftpro/urdf/pro_model.xacro`
 
--   Ubuntu 22.04
--   ROS 2 Humble Hawksbill
--   MoveIt! 2 for ROS 2 Humble
--   Colcon (ROS 2 build tool)
+為所有10個鏈接添加了碰撞幾何：
+- Base: 盒子 (0.1x0.1x0.08)
+- Link1: 圓柱體 (半徑0.02, 長度0.08)
+- Link2: 圓柱體 (半徑0.015, 長度0.15)
+- Link3: 圓柱體 (半徑0.02, 長度0.2)
+- Link4-Link7/Link9: 盒子 (0.05x0.05x0.05 / 0.04x0.04x0.04 / 0.03x0.03x0.03)
+- Link8/Gripper: 盒子 (0.05x0.03x0.05)
 
-## Installation and Build
+**原因**: MoveIt需要碰撞幾何進行運動規劃
 
-1.  **Install ROS 2 and Dependencies:**
-    First, ensure you have a working installation of ROS 2 Humble. Then, install the required MoveIt! and other packages.
+### 2. RViz配置修改 (2025-11-22)
+**文件**: `swiftpro/rviz/swiftpro_default.rviz`
 
-    ```bash
-    sudo apt update && sudo apt install -y \
-      ros-humble-desktop \
-      ros-humble-moveit \
-      ros-humble-joint-state-publisher-gui \
-      ros-humble-robot-state-publisher \
-      ros-humble-xacro
-    ```
+從MoveIt MotionPlanning插件改為基本RobotModel顯示：
+- 顯示類型: `rviz_default_plugins/RobotModel`
+- 機器人描述主題: `/robot_description`
+- 固定坐標系: `world`
+- TF前綴: 空
 
-2.  **Create a Colcon Workspace:**
-    Create a new workspace directory to house the project.
+**原因**: MoveIt插件在ROS2中導致段錯誤
 
-    ```bash
-    mkdir -p ~/ros2_ws/src
-    cd ~/ros2_ws
-    ```
+### 3. Launch文件修改 (2025-11-22)
+**文件**: `swiftpro/launch/real_robot.launch.py`
 
-3.  **Clone the Repository:**
-    Clone this repository into your workspace's `src` directory.
+添加了靜態變換發布器：
+```xml
+<node pkg="tf2_ros" exec="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 world Base"/>
+```
+
+**原因**: 建立world到Base的坐標變換
+
+## 系統架構
+
+### 數據流
+```
+sim_publisher.py → SwiftproState_topic → swiftpro_rviz_node → joint_states → robot_state_publisher → TF樹
+```
+
+### 關鍵組件
+- **sim_publisher.py**: 發布模擬的SwiftproState消息
+- **swiftpro_rviz_node**: 將位置轉換為關節角度並發布joint_states
+- **robot_state_publisher**: 從joint_states和URDF生成TF變換
+- **RViz**: 可視化機器人狀態
+
+## 安裝和構建
+
+### 系統需求
+- Ubuntu 22.04
+- ROS 2 Humble Hawksbill
+- MoveIt! 2
+- Colcon
+
+### 安裝步驟
+
+1. **安裝ROS 2和依賴**:
+```bash
+sudo apt update && sudo apt install -y \
+  ros-humble-desktop \
+  ros-humble-moveit \
+  ros-humble-joint-state-publisher-gui \
+  ros-humble-robot-state-publisher \
+  ros-humble-xacro
+```
+
+2. **創建工作區**:
+```bash
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws
+```
+
+3. **克隆倉庫**:
+```bash
+git clone https://github.com/Wai-0424/Ros2_Uarm_Visual.git src
+```
+
+4. **構建**:
+```bash
+colcon build --merge-install
+```
+
+## 使用方法
+
+### 啟動模擬
+```bash
+source install/setup.bash
+ros2 launch swiftpro sim.launch.py
+```
+
+### 啟動真實機器人 (需要硬件)
+```bash
+source install/setup.bash
+ros2 launch swiftpro real_robot.launch.py
+```
+
+### 啟動組合模式 (當前有問題)
+```bash
+source install/setup.bash
+ros2 launch swiftpro combined.launch.py
+```
+
+## 故障排除
+
+### 常見問題
+
+1. **RViz只顯示軸線**
+   - 檢查joint_states主題: `ros2 topic echo /joint_states`
+   - 檢查TF樹: `ros2 run tf2_tools view_frames.py`
+   - 確認URDF網格文件存在
+
+2. **共享庫錯誤**
+   - 重新構建: `colcon build --packages-select swiftpro --merge-install`
+   - 檢查AMENT_PREFIX_PATH設置
+
+3. **模塊導入錯誤**
+   - 確保Python路徑正確設置
+   - 檢查包安裝是否完整
+
+### 調試命令
+
+```bash
+# 檢查主題
+ros2 topic list
+ros2 topic echo /joint_states --once
+
+# 檢查節點
+ros2 node list
+
+# 檢查TF
+ros2 run tf2_tools view_frames.py
+
+# 檢查包
+ros2 pkg list | grep swiftpro
+```
+
+## 開發計劃
+
+### 短期目標
+1. 修復joint_states主題發布問題
+2. 解決共享庫加載問題
+3. 修復模塊導入錯誤
+4. 實現完整的機器人3D可視化
+
+### 長期目標
+1. 優化launch文件避免重複節點
+2. 添加真實硬件通信支持
+3. 實現運動規劃和控制
+4. 添加測試和文檔
+
+## 貢獻
+
+歡迎提交問題和拉取請求！
+
+## 許可證
+
+MIT License
+
+---
+
+**最後更新**: 2025-11-22
+**ROS版本**: Humble Hawksbill
+**MoveIt版本**: 2.5.5
 
     ```bash
     # Replace <YOUR_REPOSITORY_URL> with the actual URL of your GitHub repository

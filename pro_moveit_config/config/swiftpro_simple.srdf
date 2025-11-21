@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<robot name="swiftpro">
+    <group name="arm">
+        <link name="Base" />
+        <link name="Link1" />
+        <link name="Link2" />
+        <link name="Link3" />
+        <link name="Link8" />
+        <joint name="Joint1" />
+        <joint name="Joint2" />
+        <joint name="Joint3" />
+        <chain base_link="Base" tip_link="Link3" />
+    </group>
+    <group_state name="home" group="arm">
+        <joint name="Joint1" value="0" />
+        <joint name="Joint2" value="0" />
+        <joint name="Joint3" value="0" />
+    </group_state>
+</robot>
