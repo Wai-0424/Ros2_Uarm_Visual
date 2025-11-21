@@ -89,40 +89,115 @@ You can run a full simulation with MoveIt! and RViz to test motion planning with
 
 -   **For the Swift Pro arm:**
     ```bash
-    ros2 launch pro_moveit_config demo.launch.py
-    ```
--   **For the standard Swift arm:**
+    # Swift Pro 機械手臂（ROS 2 + MoveIt!）
+
+    本專案為 uFactory Swift Pro 機械手臂在 ROS 2（Humble）環境下的整合範例，包含驅動、模擬、MoveIt! 設定與 RViz 視覺化，方便開發者在模擬或實機上進行運動規劃與控制。
+
+    ## 主要內容
+
+    - `swiftpro`：核心驅動套件，包含與機械手臂通訊的 node、custom msg 與相關工具。
+    - `pro_moveit_config` / `swift_moveit_config`：MoveIt! 的設定包，用於不同型號的機械手臂（Pro 與 Swift）。
+
+    ## 系統需求
+
+    - Ubuntu 22.04
+    - ROS 2 Humble Hawksbill
+    - MoveIt! 2 (Humble 版本)
+    - colcon（用於建立工作區）
+
+    ## 快速安裝與建立
+
+    1. 安裝 ROS 2 與必要套件（範例）：
+
     ```bash
-    ros2 launch swift_moveit_config demo.launch.py
+    sudo apt update && sudo apt install -y \
+      ros-humble-desktop \
+      ros-humble-moveit \
+      ros-humble-joint-state-publisher-gui \
+      ros-humble-robot-state-publisher \
+      ros-humble-xacro
     ```
 
-Inside RViz, you can drag the interactive marker at the end of the arm to set a goal and then click "Plan and Execute".
+    2. 建立 colcon 工作區並 clone 本 repo：
 
-## Changelog (recent)
+    ```bash
+    mkdir -p ~/ros2_ws/src
+    cd ~/ros2_ws
+    git clone https://github.com/Wai-0424/Ros2_Uarm_Visual.git src/Ros2_Uarm_Visual
+    cd ..
+    colcon build
+    ```
 
-### 2025-11-21 — Local ROS2 port and simulation additions
-- Renamed message (.msg) files to PascalCase and fixed `package.xml` to be ROS2-compliant.
-- Ported original ROS1 nodes to ROS2: read, write, moveit and rviz nodes (C++).
-- Added a simple Python `sim_publisher.py` that publishes `SwiftproState` for visualization/testing.
-- Created `launch/sim.launch.py` to start the sim publisher, `swiftpro_rviz_node_ros2`, and `robot_state_publisher` + RViz config.
-- Added `rviz/swiftpro_default.rviz` (default RViz view to show robot model and joint_states).
-- Temporarily added a compile-time `include/serial/serial.h` stub to allow building without the external serial library.
+    3. 每次打開新的 terminal 時請 source 工作區環境：
 
-Notes:
-- This commit aims to make the package build and run in a ROS2 Humble environment for simulation and visualization. Replace the serial stub with a proper serial library (e.g. wjwwood/serial) before connecting real hardware.
+    ```bash
+    source /opt/ros/humble/setup.bash
+    source ~/ros2_ws/install/setup.bash
+    ```
 
-### 2025-11-21（補充紀錄，中文）
+    ## 使用說明（模擬與實機）
 
-- 新增 / 修改（我在本地執行並驗證）：
-    - 新增 `scripts/start_sim.sh` 與 `scripts/start_write.sh`，用來在正確的 ROS2 環境下背景啟動模擬與寫入節點，並將日誌與 PID 寫至 `/tmp` 以方便檢查。
-    - 修正 `scripts` 在 `set -u`（嚴格模式）下 sourcing `/opt/ros/humble/setup.bash` 會失敗的問題（暫時關閉 nounset 再恢復），避免啟動時出現未綁定變數導致的 exit code 1。
-    - 修改 `swiftpro/src/swiftpro_write_node_ros2.cpp`：當參數 `enable_writes` 為 `false`（模擬模式）時，不再嘗試開啟 serial port，避免在沒有實體機時拋出例外導致程式終止；此外，write node 會把「命令狀態」publish 到 `SwiftproCommand`，供模擬器 mirror 使用。
-    - 新增一個簡易模擬器 `sim_publisher.py`（已安裝到 `install/.../sim_publisher.py`），會訂閱 `SwiftproCommand` 並把模擬狀態發布到 `SwiftproState_topic`，可以在 RViz 中看到與寫入節點對應的模擬結果。
-    - 在本地完成一次端到端軟體驗證（未連實體）：啟動 sim 與 write（`enable_writes:=false`），發一筆 `/position_write_topic`，確認 write node publish `/SwiftproCommand`，sim 收到後將狀態更新到 `/SwiftproState_topic`（x=120,y=0,z=100 範例）。相關日誌會寫到 `/tmp/swiftpro_sim.out` 與 `/tmp/swiftpro_write_node.log`。
+    1) 模擬（建議初學者先從模擬開始）
 
-- 使用與注意事項（中文）：
-    - 若要切換到實機測試，請先確保機械手臂的序列埠（例如 `/dev/ttyACM0`）存在且權限正確（可用 `sudo usermod -a -G dialout $USER` 或建立 udev 規則）。
-    - 預設啟動腳本會把 `enable_writes` 設為 `false`（安全），要寫入實機請以 `--ros-args -p enable_writes:=true` 明確啟動寫入節點。建議初次連實機時先下小幅度指令並準備急停。
-    - 若需要，我可以幫你：自動化 udev 規則、把 `start_write.sh` 改為可接參數、或將變更 commit 並推到 GitHub（下方已執行）。
+    - 已內建一個簡單模擬節點 `sim_publisher.py`，在本地能根據 `SwiftproCommand` 更新並發布模擬狀態到 `SwiftproState_topic`，可以在 RViz 中觀察。
+    - 範例：啟動模擬（或使用 repo 中的 `launch`）後，在另一個 terminal 發送測試位置：
 
-以上修改已於本地 build 並驗證。如需我把變更推送到遠端 GitHub repo，請確認你授權本機有權限推送（或告訴我 remote URL 與是否要我立即推）。
+    ```bash
+    # 發一個測試位置
+    ros2 topic pub --once /position_write_topic swiftpro/msg/Position "{x: 120.0, y: 0.0, z: 100.0}"
+
+    # 檢查寫入節點是否 publish 出 SwiftproCommand
+    ros2 topic echo /SwiftproCommand swiftpro/msg/SwiftproState --once
+
+    # 檢查模擬器是否把狀態更新到 SwiftproState_topic
+    ros2 topic echo /SwiftproState_topic swiftpro/msg/SwiftproState --once
+    ```
+
+    2) 實機（上機前請務必注意安全）
+
+    - 確認序列埠：通常是 `/dev/ttyACM0` 或 `/dev/ttyUSB0`。使用 `ls /dev/ttyACM* /dev/ttyUSB*` 找出裝置。
+    - 權限問題：若使用者沒有權限，請加入 `dialout` 群組或建立 udev 規則：
+
+    ```bash
+    sudo usermod -a -G dialout $USER
+    # 登出/登入或重新啟動後生效，或使用 udev 規則避免每次手動 chmod
+    ```
+
+    - 啟動寫入節點時請帶上參數 `enable_writes:=true` 才會真正開 serial 並下達 G-code 到硬體；預設 `enable_writes` 為 `false`（安全模式），不會觸發硬體動作。
+
+    範例（安全地啟動並測試小幅移動）：
+
+    ```bash
+    # 先 source
+    source /opt/ros/humble/setup.bash
+    source install/setup.bash
+
+    # 啟動寫入節點（實機）
+    nohup ./install/swiftpro/lib/swiftpro/swiftpro_write_node_ros2 --ros-args -p enable_writes:=true > /tmp/swiftpro_write_node.log 2>&1 &
+    echo $! > /tmp/swiftpro_write_node.pid
+
+    # 只下小幅度動作做驗證
+    ros2 topic pub --once /position_write_topic swiftpro/msg/Position "{x: 5.0, y: 0.0, z: 100.0}"
+    ```
+
+    請務必在第一次通電或第一次啟動實機時準備好硬體急停（E-stop）與觀察點，並從小幅度運動開始逐步驗證。
+
+    ## 今天的修改與驗證（2025-11-21，中文紀錄）
+
+    - 新增並驗證：`scripts/start_sim.sh`、`scripts/start_write.sh`（用於在正確的 ROS 環境下背景啟動模擬與寫入節點，並把日誌/PID 寫到 `/tmp`）。
+    - 修正：當 shell 使用 `set -u` 時，sourcing `/opt/ros/humble/setup.bash` 會因為未綁定變數導致失敗；現已暫時關閉 nounset（`set +u`）再 source，然後恢復 `set -u`，避免啟動錯誤。
+    - 修改：`swiftpro/src/swiftpro_write_node_ros2.cpp`，當 `enable_writes=false`（模擬模式）時跳過 serial open，且 write node 會把「命令狀態」發布到 `/SwiftproCommand` 以供模擬器 mirror。
+    - 新增：`sim_publisher.py`（安裝至 `install/.../sim_publisher.py`），會訂閱 `/SwiftproCommand` 並發佈 `/SwiftproState_topic`，可在 RViz 中觀察鏡像結果。
+    - 驗證：本地在沒有實體硬體下完成 end-to-end 測試：啟動 sim 與 write（`enable_writes=false`），由 `/position_write_topic` 發送命令，確認 `SwiftproCommand` 與 `SwiftproState_topic` 都反映相同命令值。
+
+    ## 其他注意事項與後續建議
+
+    - serial library：目前專案內含一份簡易的 `serial.h` stub 以方便本地 build；若要在實機上穩定運作，建議使用成熟的 serial library（例如 wjwwood/serial），並在 CMake 中正確連結。
+    - 若需要，我可以幫你：
+      - 將 `start_write.sh` 支援參數化（可選 `--enable-writes true/false`）並提交到 repo；
+      - 產生範例 udev 規則以免每次手動 chmod；
+      - 或在你插上手臂後協助遠端執行小幅度測試。
+
+    ---
+
+    如果你同意，我現在可以把這個中文 README commit 並推到 `main`（或你指定的分支）。
