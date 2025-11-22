@@ -63,6 +63,15 @@ This project provides a complete ROS 2 (Humble) framework for controlling the uF
 
 **原因**: 建立world到Base的坐標變換
 
+### 4. 系統修復與清理 (2025-11-22)
+**文件**: `swiftpro/launch/sim.launch.py`, `README.md`
+
+- **修復**: 移除了 `sim.launch.py` 中的硬編碼路徑，改為使用 `FindPackageShare` 動態查找。
+- **修復**: 修正了模型加載邏輯，預設使用 `pro_model.xacro`。
+- **清理**: 移除了未使用的 `swift_moveit_config` 資料夾，簡化專案結構。
+
+**原因**: 解決無法在其他電腦上運行模擬的問題，並保持專案整潔。
+
 ## 系統架構
 
 ### 數據流
@@ -241,7 +250,7 @@ You can run a full simulation with MoveIt! and RViz to test motion planning with
     ## 主要內容
 
     - `swiftpro`：核心驅動套件，包含與機械手臂通訊的 node、custom msg 與相關工具。
-    - `pro_moveit_config` / `swift_moveit_config`：MoveIt! 的設定包，用於不同型號的機械手臂（Pro 與 Swift）。
+    - `pro_moveit_config`：MoveIt! 的設定包，用於 Swift Pro 機械手臂。
 
     ## 系統需求
 

@@ -1,4 +1,0 @@
-<!-- ROS2: 廢除。請直接執行：
-     ros2 run moveit_setup_assistant moveit_setup_assistant --config_pkg swift_moveit_config
--->
-<!-- 已移除舊 ROS1 內容 -->
