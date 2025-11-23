@@ -21,6 +21,15 @@ def generate_launch_description():
         executable='swiftpro_write_node_ros2',
         name='swiftpro_write_node',
         output='screen',
+        parameters=[{'enable_writes': True}]  # Enable actual hardware communication
+    )
+
+    # swiftpro_read_node_ros2: reads robot state from serial and publishes SwiftproState_topic
+    read_node = Node(
+        package='swiftpro',
+        executable='swiftpro_read_node_ros2',
+        name='swiftpro_read_node',
+        output='screen'
     )
 
     # swiftpro_moveit_node_ros2: converts MoveIt fake controller states to robot commands
@@ -71,9 +80,10 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         output='screen',
-        arguments=['-d', PathJoinSubstitution([FindPackageShare('swiftpro'), 'rviz', 'swiftpro_default.rviz'])],
+        arguments=['-d', PathJoinSubstitution([FindPackageShare('pro_moveit_config'), 'launch', 'moveit.rviz'])],
         parameters=[{
             'robot_description': robot_description_content,
+            'robot_description_semantic': ParameterValue(robot_description_semantic_content, value_type=str),
             'planning_pipelines': ['ompl']
         }]
     )
@@ -118,6 +128,7 @@ def generate_launch_description():
     )
 
     ld.add_action(write_node)
+    ld.add_action(read_node)
     ld.add_action(moveit_node)
     ld.add_action(rviz_node)
     ld.add_action(rsp_node)
