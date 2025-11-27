@@ -139,3 +139,31 @@ Ros2_Uarm_Visual/
 **維護者**: Wai-0424
 **最後更新**: 2025-11-24
 
+
+
+## 🔧 2025-11-28 — 轉換與進度備註
+
+今天已完成的工作（快速紀錄）:
+
+- 把多數原本的 ROS1 XML launch 檔轉為 ROS2 Python launch（或新增 ROS2 wrapper），並把原始 XML 移到  做備份。
+- 修正 ，避免因為系統上缺少  而直接失敗；以  與專案內的 joint topic 驅動模型顯示。
+- 新增或修正了 、、以及相關的 ROS2 版 launch 檔，並在本機測試 move_group + rviz 能啟動（可看到機械臂模型）。
+
+目前仍需處理（尚未轉換的 legacy 檔案）:
+
+1.  -> 轉成 （或已有一份 wrapper，需檢查並統一）
+2.  -> 轉成 ROS2 launch.py（controller manager 的參數與 plugin 需確認）
+3.  -> 轉成 ROS2 launch.py（sensor plugins/3D 感測設定）
+4.  -> 轉成 ROS2 launch.py（若你使用 ROS 參數化的 warehouse/DB 設定）
+
+其他待辦（建議優先順序）:
+
+- 把 、、 轉為 ROS2 參數格式（以  包裹，或由對應的 launch 以  傳入），讓  可以正確載入 OMPL 與 kinematics 設定。
+- 把 controller 設定（controllers, controller_names）整合到 ROS2 參數並確認  或 swiftpro controller plugin 能正確讀取。
+- 清理 （可移到  或直接刪除，視你是否要保留備份）。
+
+分支與提交（本地）:
+
+- 已在本地建立分支建議名稱：（若你允許，我會把目前變更 commit 到這個分支並嘗試推送到遠端）。
+
+如果你明天要我繼續，我可以從上述第一項（ 與 controller/sensor manager 的轉換）開始進行，並每完成一個檔案就跑一次 launch 驗證。

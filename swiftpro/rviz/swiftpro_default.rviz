@@ -11,5 +11,5 @@ Visualization Manager:
       Update Interval: 0.0
       Alpha: 1.0
   Global Options:
-    Fixed Frame: world
+    Fixed Frame: odom
     Background Color: 48; 48; 48

@@ -2,7 +2,6 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -22,8 +21,6 @@ def generate_launch_description():
         ' ',
         PathJoinSubstitution([pkg_cfg, 'config', 'swiftpro.srdf'])
     ])
-    # Ensure the SRDF path/content is passed as a string parameter (avoid yaml parsing)
-    robot_description_semantic = ParameterValue(robot_description_semantic, value_type=str)
 
     # Base parameters passed to move_group and rviz
     params = {
@@ -32,11 +29,16 @@ def generate_launch_description():
         'planning_pipelines': ['ompl']
     }
 
+    # Include additional parameter files (OMPL, kinematics, joint limits)
+    ompl_yaml = PathJoinSubstitution([pkg_cfg, 'config', 'ompl_planning.yaml'])
+    kinematics_yaml = PathJoinSubstitution([pkg_cfg, 'config', 'kinematics.yaml'])
+    joint_limits_yaml = PathJoinSubstitution([pkg_cfg, 'config', 'joint_limits.yaml'])
+
     move_group = Node(
         package='moveit_ros_move_group',
         executable='move_group',
         output='screen',
-        parameters=[params]
+        parameters=[params, ompl_yaml, kinematics_yaml, joint_limits_yaml]
     )
 
     rviz = Node(
@@ -46,9 +48,10 @@ def generate_launch_description():
         parameters=[params]
     )
 
+    jsp = Node(package='joint_state_publisher', executable='joint_state_publisher')
     rsp = Node(
         package='robot_state_publisher', executable='robot_state_publisher',
         parameters=[{'robot_description': robot_description}]
     )
 
-    return LaunchDescription([rsp, move_group, rviz])
+    return LaunchDescription([jsp, rsp, move_group, rviz])
