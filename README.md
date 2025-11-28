@@ -167,3 +167,53 @@ Ros2_Uarm_Visual/
 - 已在本地建立分支建議名稱：（若你允許，我會把目前變更 commit 到這個分支並嘗試推送到遠端）。
 
 如果你明天要我繼續，我可以從上述第一項（ 與 controller/sensor manager 的轉換）開始進行，並每完成一個檔案就跑一次 launch 驗證。
+
+
+---
+
+### 🔎 2025-11-28 — 今日詳細紀錄（由自動化助理紀錄）
+
+今天我在專案中完成並驗證了下列改動：
+
+- 參數化 xacro 結構以支援 end_effector（新增或修正 `<xacro:arg name="end_effector" ...>`）
+    - 在已安裝的 xacro 裡頭，將末端執行器條件改為可選 suction/gripper，並確認 `Suction.STL` 可被渲染。
+- 修正並統一 MoveIt 的參數檔 `move_group_params.yaml` 的格式，避免 rcl 在啟動時解析 `--params-file` 發生錯誤：
+    - 將參數包在 node key 下（`move_group:` -> `ros__parameters:`）以符合 `--params-file` 的預期格式。
+- 調整 `pro_moveit_config` 的 demo launch（Python launch）：
+    - 確保 `end_effector` 的 launch argument 在產生 xacro 命令前宣告，並以 `end_effector:=suction` 渲染 robot_description（目前在啟動時可看到吸盤）。
+- 建置並啟動測試：
+    - 使用已建置的 install（請 source 對應的 `install/local_setup.bash`）啟動 `ros2 launch pro_moveit_config demo.launch.py end_effector:=suction`，已驗證 `move_group` 啟動並印出 "You can start planning now!"，RViz 也能顯示機械臂模型與吸盤。
+
+當前觀察與問題：
+
+- 吸盤（Suction.STL）已成功載入，但位置有「輕微不對位」（在 RViz 中末端吸盤相對於手臂末節點的 pose 需要微調）。
+    - 原因推測：xacro 中該 link/visual 的 origin (pose/xyz/rpy) 需要調整，或 SRDF/關節固定狀態造成視覺差異。目標修正方式是在 xacro 對該視覺元素微調平移或旋轉參數。
+- 其他非致命警告（可接受於測試階段）：
+    - 多個 link 只有 visual 沒有 collision（MoveIt 會警告）。
+    - rviz 印出 Qt Wayland plugin 與 class_loader namespace collision 的警告（通常不影響基本功能，但可觀察是否影響 GPU/渲染行為）。
+
+短期建議（下一步可由我代為執行）:
+
+1. 微調吸盤位置（我可以直接在 `swiftpro/urdf/swift_model.xacro` 或 `pro_model.xacro` 的 Link8/相應節點調整 `<origin xyz="..." rpy="..."/>` 數值，然後重建並重新啟動驗證）。
+2. 將已修好的已安裝 xacro 變更回寫到 source，以避免 source 與 install 版本不一致（我可以把安裝版內容同步到 `Ros2_Uarm_Visual-main/swiftpro/urdf/`，但會在修改前先列出會變更的檔案供你確認）。
+3. 暫時把 visual mesh 複製到 collision 欄位，快速消除 MoveIt 的大量 collision warnings（此為快速且粗糙的臨時處理）。
+
+如何重現（簡短命令）：
+
+```bash
+source /opt/ros/humble/setup.bash
+source /media/wai4424/Data/Ros2_Humble/ros2_ws_moveit/install/local_setup.bash
+ros2 launch pro_moveit_config demo.launch.py end_effector:=suction
+```
+
+要我做的選項（請回覆 A / B / C 或其他指示）：
+
+- A：我將把 `swift_model.xacro` & `pro_model.xacro` 的 suction origin 微調（嘗試小幅 xyz/rpy 變動）並 rebuild，直到對位良好。
+- B：我將把已安裝的 xacro 變更回寫到 source，確保 source 與 install 一致（包含 end_effector 參數化），並提交這些變更。
+- C：我把 README 的變更 commit 並推上 GitHub（我將嘗試推到 `convert/ros1-to-ros2` 分支；若推送需要憑證或遠端未設定會回報錯誤訊息）。
+
+我已紀錄本次變更，並建議若要我直接修正吸盤對位請回覆 A；若只要把紀錄上傳 GitHub 請回覆 C（或同時選 A+C）。
+
+---
+
+**備註**：今天的操作包含直接替換與修復已安裝檔案（install 下的 xacro 與 launch），以快速排查 runtime 問題。為長期維護，建議把那些已修好的改動同步回 source 並以 commit 的方式管理。
