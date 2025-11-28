@@ -1,3 +1,63 @@
+## 📦 專案轉移與相依性（給另一台電腦的快速上手指南）
+
+以下步驟與套件可讓你將整個工作區安全地複製到另一台 Ubuntu 22.04 機器並繼續開發：
+- 必要軟體與套件
+
+```bash
+sudo apt update
+sudo apt install -y \
+    build-essential \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    python3-vcstool \
+    git \
+    ros-humble-desktop \
+    ros-humble-moveit \
+    ros-humble-xacro \
+    ros-humble-robot-state-publisher \
+    ros-humble-joint-state-publisher-gui
+```
+- 把專案 clone 到新機器並編譯
+
+```bash
+# 假設放在 ~/ros2_ws/src
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+git clone https://github.com/Wai-0424/Ros2_Uarm_Visual.git
+cd ~/ros2_ws
+colcon build --packages-select swiftpro pro_moveit_config
+```
+- 啟動前環境設定（每個新 shell 都要 source）
+
+```bash
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+```
+- 啟動 demo（使用吸盤）
+
+```bash
+ros2 launch pro_moveit_config demo.launch.py end_effector:=suction
+```
+注意事項：
+- 若出現 `Package 'pro_moveit_config' not found`，請確認你已對該機器執行 `source ~/ros2_ws/install/local_setup.bash` 並且 `AMENT_PREFIX_PATH` 包含新工作區的 `install` 位置。
+- 若在兩台機器間切換時遇到二進位不相容（不同 glibc / CPU 架構），請在新機器上重新執行 `colcon build`。
+
+## 🔁 當前修改與進度（狀態快照）
+
+- 分支 (建議推送分支)：`convert/ros1-to-ros2`
+- 主要已完成項目：
+    - `swiftpro/urdf/swift_model.xacro`：已清理並加入 `<xacro:arg name="end_effector" default="suction"/>`，`Link8` 支援 `Suction.STL` 與 `Gripper.STL`，預設為 `suction`，並微調 origin 為 `-0.16201 0 -0.23651`。
+    - `pro_moveit_config`：已調整 `move_group` 參數格式以支援 `--params-file`，並更新 demo launch 參數化 `end_effector`。
+    - 成功 `colcon build` 並在本機測試 MoveIt + RViz 能啟動（但請注意啟動時需正確 source 工作區的 `install`）。
+
+- 待完成項目（建議優先順序）：
+    1. 如欲減少 MoveIt 警告，補上或微調各 Link 的 collision geometry（可先用 visual mesh 快速填充）。
+    2. 若要正式上線真實控制，整合序列埠存取（避免 read/write 衝突）。
+    3. 若需 CI/CD 或在其他機器自動化建置，請新增 `rosdep` 與 `vcstool` 的安裝腳本（我可以協助）。
+
+---
+
+如要我直接幫你把變更 commit 並推到 GitHub，請回覆「請推」；若你要我先只產生 commit 而不推，回覆「先不推」。我會回報 git push 的結果或提供替代指令（例如產生 patch 或給你完整 git 命令）。
 # Swift Pro 機械手臂控制專案 (ROS 2 Humble)
 
 ![ROS Version](https://img.shields.io/badge/ROS-Humble-blue)

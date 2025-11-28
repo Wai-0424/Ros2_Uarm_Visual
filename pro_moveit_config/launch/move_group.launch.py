@@ -4,6 +4,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
+from launch.conditions import IfCondition, UnlessCondition
 
 
 def generate_launch_description():
@@ -36,6 +37,22 @@ def generate_launch_description():
         )
     )
 
+    # Include controller manager: use fake controller manager when fake_execution is true,
+    # otherwise include the swiftpro controller manager (which may be empty placeholder).
+    fake_controller_manager = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([pkg_share, 'launch', 'fake_moveit_controller_manager.launch.py'])
+        ),
+        condition=IfCondition(fake_execution)
+    )
+
+    swiftpro_controller_manager = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([pkg_share, 'launch', 'swiftpro_moveit_controller_manager.launch.py'])
+        ),
+        condition=UnlessCondition(fake_execution)
+    )
+
     # Include sensor manager (optional)
     sensor_manager = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -48,7 +65,8 @@ def generate_launch_description():
         package='moveit_ros_move_group',
         executable='move_group',
         output='screen',
-        parameters=[{}],
+        # Load consolidated ROS2 parameters for move_group (ompl, kinematics, joint_limits)
+        parameters=[PathJoinSubstitution([pkg_share, 'config', 'move_group_params.yaml'])],
     )
 
     ld = LaunchDescription()
@@ -62,6 +80,8 @@ def generate_launch_description():
     ld.add_action(planning_context)
     ld.add_action(planning_pipeline)
     ld.add_action(trajectory_execution)
+    ld.add_action(fake_controller_manager)
+    ld.add_action(swiftpro_controller_manager)
     ld.add_action(sensor_manager)
     ld.add_action(move_group)
 
