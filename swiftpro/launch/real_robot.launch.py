@@ -13,7 +13,17 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    ld = LaunchDescription()
+    # Declare end_effector argument
+    declared_arguments = []
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'end_effector',
+            default_value='suction',
+            description='End effector type: suction or gripper'
+        )
+    )
+
+    end_effector = LaunchConfiguration('end_effector')
 
     # swiftpro_write_node_ros2: communicates with the robot via serial
     write_node = Node(
@@ -40,7 +50,7 @@ def generate_launch_description():
         output='screen',
     )
 
-    # swiftpro_rviz_node_ros2: publishes joint_states for visualization
+    # swiftpro_rviz_node_ros2: publishes joint_states for visualization and odom->Base TF
     rviz_node = Node(
         package='swiftpro',
         executable='swiftpro_rviz_node_ros2',
@@ -49,10 +59,10 @@ def generate_launch_description():
     )
 
     # robot_state_publisher: use xacro to generate robot_description
-    # Using pro_model.xacro as default for Swift Pro
     robot_description_content = Command([
         'xacro ',
-        PathJoinSubstitution([FindPackageShare('swiftpro'), 'urdf', 'pro_model.xacro'])
+        PathJoinSubstitution([FindPackageShare('swiftpro'), 'urdf', 'pro_model.xacro']),
+        ' end_effector:=', end_effector
     ])
 
     # Load SRDF for MoveIt semantic description
@@ -110,31 +120,23 @@ def generate_launch_description():
         }]
     )
 
-    # Static transform publisher from world to Base
+    # Static transform publisher from world to odom
+    # swiftpro_rviz_node publishes odom -> Base
     static_tf_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'world', 'Base']
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'odom']
     )
 
-    static_transform_publisher = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0.5', '0', '0', '0', 'base_link', 'odom']
-    )
-
-    ld.add_action(write_node)
-    ld.add_action(read_node)
-    ld.add_action(moveit_node)
-    ld.add_action(rviz_node)
-    ld.add_action(rsp_node)
-    ld.add_action(move_group_node)
-    ld.add_action(static_tf_node)
-    ld.add_action(rviz2_node)
-    ld.add_action(static_transform_publisher)
-
-    return ld
+    return LaunchDescription(declared_arguments + [
+        write_node,
+        read_node,
+        moveit_node,
+        rviz_node,
+        rsp_node,
+        move_group_node,
+        static_tf_node,
+        rviz2_node
+    ])
