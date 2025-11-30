@@ -277,3 +277,19 @@ ros2 launch pro_moveit_config demo.launch.py end_effector:=suction
 ---
 
 **備註**：今天的操作包含直接替換與修復已安裝檔案（install 下的 xacro 與 launch），以快速排查 runtime 問題。為長期維護，建議把那些已修好的改動同步回 source 並以 commit 的方式管理。
+
+## 🔧 2025-11-30 — 吸盤對位修復與 MoveIt 設定更新
+
+今天已完成的工作（詳細紀錄）:
+
+1.  **吸盤對位修復 (Suction Alignment Fix)**:
+    - 發現吸盤模型 (\Suction.STL\) 與末端連桿 (\Link9.STL\) 的座標原點不一致，導致視覺上有縫隙。
+    - 修改 \swiftpro/urdf/pro_model.xacro\，將吸盤的 \<origin>\ 調整為與 \Link9\ 一致 (\-0.19941 0 -0.27471\)，成功消除縫隙。
+
+2.  **專案清理 (Project Cleanup)**:
+    - 移除標準版 Swift (非 Pro) 的相關檔案，避免混淆：
+        - \swiftpro/urdf/swift_model.xacro        - \swiftpro/urdf/swift_links/        - \swiftpro/launch/swift_control.launch        - \swiftpro/launch/swift_display.launch
+3.  **MoveIt 設定更新 (MoveIt Configuration)**:
+    - 修改 \pro_moveit_config/launch/demo.launch.py\：
+        - 將模型路徑從 \swift_model.xacro\ 改為正確的 \pro_model.xacro\。
+        - 加入 \static_transform_publisher\ 發布 \world\ -> \Base\ 的座標轉換，解決 RViz 中的 \�

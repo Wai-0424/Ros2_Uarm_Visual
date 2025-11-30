@@ -13,7 +13,7 @@ def generate_launch_description():
     robot_description = Command([
         PathJoinSubstitution([FindExecutable(name='xacro')]),
         ' ',
-        PathJoinSubstitution([pkg_swift, 'urdf', 'swift_model.xacro'])
+        PathJoinSubstitution([pkg_swift, 'urdf', 'pro_model.xacro'])
     ])
 
     # Read SRDF as string (some move_group nodes expect content)
@@ -51,4 +51,21 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description}]
     )
 
-    return LaunchDescription([rsp, move_group, rviz])
+    # Static TF
+    static_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'Base']
+    )
+
+    # Publish fake joint states
+    jsp = Node(
+        package='joint_state_publisher_gui',
+        executable='joint_state_publisher_gui',
+        name='joint_state_publisher_gui',
+        output='screen'
+    )
+
+    return LaunchDescription([rsp, move_group, rviz, static_tf, jsp])

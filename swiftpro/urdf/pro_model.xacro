@@ -1,13 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="swiftpro" >
 	<!-- select end effector: 'gripper' (default) or 'suction' -->
-	<xacro:arg name="end_effector" default="gripper"/>
+	<xacro:arg name="end_effector" default="suction"/>
 
-<link name="Base">
-	<?xml version="1.0"?>
-	<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="swiftpro" >
-		<!-- select end effector: 'gripper' (default) or 'suction' -->
-		<xacro:arg name="end_effector" default="gripper"/>
 
 	<link name="Base">
 		<inertial>
@@ -278,62 +273,6 @@
 			<inertia ixx="0.000002184" ixy="0.000000020" ixz="-0.000000207" 
 					 iyy="0.000002992" iyz="0.000000371" izz="0.000001832"/>
 		</inertial>
-			<!-- visual/collision chosen by end_effector arg -->
-			<!-- use $(eval ...) so the CLI-provided property 'end_effector' is
-				 available when xacro evaluates the condition -->
-			<xacro:if value="$(eval end_effector == 'gripper')">
-				<visual>
-					<geometry>
-						<mesh filename="package://swiftpro/urdf/pro_links/Suction.STL"/>
-					</geometry>
-					<origin xyz = "-0.16201 0 -0.23651" rpy = "0 0 0" />
-					<material name = "">
-						<color rgba = "0.3 0.3 0.3 1" />
-					</material>
-				</visual>
-				<collision>
-					<geometry>
-						<mesh filename="package://swiftpro/urdf/pro_links/Suction.STL"/>
-					</geometry>
-					<origin xyz="-0.16201 0 -0.23651" rpy="0 0 0"/>
-				</collision>
-			</xacro:if>
-
-			<xacro:if value="$(eval end_effector == 'suction')">
-				<visual>
-					<geometry>
-						<mesh filename="package://swiftpro/urdf/pro_links/Suction.STL"/>
-					</geometry>
-					<origin xyz = "-0.16201 0 -0.23651" rpy = "0 0 0" />
-					<material name = "">
-						<color rgba = "0.3 0.3 0.3 1" />
-					</material>
-				</visual>
-				<collision>
-					<geometry>
-						<mesh filename="package://swiftpro/urdf/pro_links/Suction.STL"/>
-					</geometry>
-					<origin xyz="-0.16201 0 -0.23651" rpy="0 0 0"/>
-				</collision>
-			</xacro:if>
-
-			<xacro:if value="$(eval end_effector != 'gripper' and end_effector != 'suction')">
-				<visual>
-					<geometry>
-						<cylinder length="0.02" radius="0.03"/>
-					</geometry>
-					<origin xyz = "-0.16201 0 -0.23651" rpy = "0 0 0" />
-					<material name = "">
-						<color rgba = "0.2 0.2 0.6 1" />
-					</material>
-				</visual>
-				<collision>
-					<geometry>
-						<cylinder length="0.02" radius="0.03"/>
-					</geometry>
-					<origin xyz = "-0.16201 0 -0.23651" rpy = "0 0 0" />
-				</collision>
-			</xacro:if>
 	</link>
 
 	<joint name="Joint8" type="revolute">
@@ -367,6 +306,61 @@
 			</geometry>
 			<origin xyz="-0.19941 0 -0.27471" rpy="0 0 0"/>
 		</collision>
+
+		<!-- End Effector Visuals attached to Link9 -->
+		<xacro:if value="$(eval end_effector == 'gripper')">
+			<visual>
+				<geometry>
+					<mesh filename="package://swiftpro/urdf/pro_links/Gripper.STL"/>
+				</geometry>
+				<origin xyz = "-0.18942 0 -0.26354" rpy = "0 0 0" />
+				<material name = "">
+					<color rgba = "0.3 0.3 0.3 1" />
+				</material>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://swiftpro/urdf/pro_links/Gripper.STL"/>
+				</geometry>
+				<origin xyz="-0.18942 0 -0.26354" rpy="0 0 0"/>
+			</collision>
+		</xacro:if>
+
+		<xacro:if value="$(eval end_effector == 'suction')">
+			<visual>
+				<geometry>
+					<mesh filename="package://swiftpro/urdf/pro_links/Suction.STL"/>
+				</geometry>
+				<origin xyz = "-0.19941 0 -0.27471" rpy = "0 0 0" />
+				<material name = "">
+					<color rgba = "0.3 0.3 0.3 1" />
+				</material>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://swiftpro/urdf/pro_links/Suction.STL"/>
+				</geometry>
+				<origin xyz="-0.19941 0 -0.27471" rpy="0 0 0"/>
+			</collision>
+		</xacro:if>
+
+		<xacro:if value="$(eval end_effector != 'gripper' and end_effector != 'suction')">
+			<visual>
+				<geometry>
+					<cylinder length="0.02" radius="0.03"/>
+				</geometry>
+				<origin xyz = "-0.18942 0 -0.26354" rpy = "0 0 0" />
+				<material name = "">
+					<color rgba = "0.2 0.2 0.6 1" />
+				</material>
+			</visual>
+			<collision>
+				<geometry>
+					<cylinder length="0.02" radius="0.03"/>
+				</geometry>
+				<origin xyz = "-0.18942 0 -0.26354" rpy = "0 0 0" />
+			</collision>
+		</xacro:if>
 	</link>
 
 	<joint name="Joint9" type="revolute">

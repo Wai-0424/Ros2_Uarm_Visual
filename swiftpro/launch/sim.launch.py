@@ -77,7 +77,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'world', 'Base']
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'odom']
     )
 
     ld.add_action(sim_pub_node)
